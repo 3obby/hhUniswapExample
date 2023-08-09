@@ -5,5 +5,5 @@ edit hardhat.config.ts to include your API key.
 in one terminal, fork mainnet:
 
 ```
-yarn hardhat node --fork
+yarn hardhat node
 ```
