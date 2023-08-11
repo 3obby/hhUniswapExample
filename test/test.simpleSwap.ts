@@ -1,5 +1,4 @@
 import { ethers } from "hardhat";
-import { Contract } from "ethers";
 import { expect } from "chai";
 
 const {
@@ -8,7 +7,6 @@ const {
 
 describe("exampleContract", function () {
   async function deploy() {
-    const swapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
     const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
     const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
     const ERC20_ABI = [
@@ -23,99 +21,154 @@ describe("exampleContract", function () {
       "function allowance(address _owner, address _spender) public view returns (uint256 remaining)",
     ];
 
+    async function printBalances() {
+      const richbalanceDAIb1 = await daiToken.balanceOf(
+        LOADED_DAI_HOLDER.address
+      );
+      console.log(
+        `DAI balance of rich     : ${ethers.formatUnits(richbalanceDAIb1, 18)}`
+      );
+
+      const signerbalanceDAIb1 = await daiToken.balanceOf(signer.address);
+      console.log(
+        `DAI balance of signer   : ${ethers.formatUnits(
+          signerbalanceDAIb1,
+          18
+        )}`
+      );
+
+      const contractBalanceDAIb1 = await daiToken.balanceOf(
+        addrExampleContract
+      );
+      console.log(
+        `DAI balance of contract : ${ethers.formatUnits(
+          contractBalanceDAIb1,
+          18
+        )}`
+      );
+
+      const richbalanceWETHb1 = await wethToken.balanceOf(
+        LOADED_DAI_HOLDER.address
+      );
+      console.log(
+        `WETH balance of rich    : ${ethers.formatUnits(richbalanceWETHb1, 18)}`
+      );
+
+      const signerbalanceWETHb1 = await wethToken.balanceOf(signer.address);
+      console.log(
+        `WETH balance of signer  : ${ethers.formatUnits(
+          signerbalanceWETHb1,
+          18
+        )}`
+      );
+
+      const contractBalanceWETHb1 = await wethToken.balanceOf(
+        addrExampleContract
+      );
+      console.log(
+        `WETH balance of contract: ${ethers.formatUnits(
+          contractBalanceWETHb1,
+          18
+        )}`
+      );
+    }
+
     const exampleContract = await ethers.deployContract("SwapExamples");
 
     const addrExampleContract = await exampleContract.getAddress();
 
-    console.log(`Deployed to ${await exampleContract.getAddress()}`);
+    console.log(
+      `ExampleContract deployed to: ${await exampleContract.getAddress()}`
+    );
 
     const [signer] = await ethers.getSigners();
 
-    // find a loaded holder on etherscan to send us some DAI
-    const rich = await ethers.getImpersonatedSigner(
-      "0x604749efB8DC03976D832c8353cB327C5dF09dF6"
+    // find a DAI holder from etherscan to impersonate, as of 8/11/23 this addr is loaded:
+    const ADDR_LOADED_DAI_HOLDER = "0x604749efB8DC03976D832c8353cB327C5dF09dF6";
+
+    const LOADED_DAI_HOLDER = await ethers.getImpersonatedSigner(
+      ADDR_LOADED_DAI_HOLDER
     );
 
+    //send the DAI holder some L1 to pay for gas fees
     await signer.sendTransaction({
-      to: "0x604749efB8DC03976D832c8353cB327C5dF09dF6",
-      value: ethers.parseEther("200"), // 0.01 Ether
+      to: ADDR_LOADED_DAI_HOLDER,
+      value: ethers.parseEther("200"),
       gasPrice: ethers.parseUnits("5000", "gwei"),
-      gasLimit: 210000,
+      gasLimit: 250000,
     });
 
-    const daiToken = new ethers.Contract(DAI_ADDRESS, ERC20_ABI, rich);
-    const wethToken = new ethers.Contract(WETH_ADDRESS, ERC20_ABI, rich);
+    //create instances of each token contract to read balances/approve transfers
+    const daiToken = new ethers.Contract(
+      DAI_ADDRESS,
+      ERC20_ABI,
+      LOADED_DAI_HOLDER
+    );
+    const wethToken = new ethers.Contract(
+      WETH_ADDRESS,
+      ERC20_ABI,
+      LOADED_DAI_HOLDER
+    );
 
+    //the loaded DAI holder shares some with the signer and the exampleContract
     const transferAmount = ethers.parseUnits("2", 18);
-
     await daiToken.transfer(addrExampleContract, transferAmount);
+    await daiToken.transfer(signer, transferAmount);
 
-    const richbalanceDAI = await daiToken.balanceOf(rich.address);
     console.log(
-      `DAI balance of rich  : ${ethers.formatUnits(richbalanceDAI, 18)}`
+      "Initial Balances (after 'rich' DAI holder shares 2 DAI/ea with signer/contract):"
     );
+    await printBalances();
 
-    const signerbalanceDAI = await daiToken.balanceOf(signer.address);
+    //authorize exampleContract to withdraw DAI
+    const daiTokenWithSigner = daiToken.connect(signer);
+    (
+      await daiTokenWithSigner.approve(
+        addrExampleContract,
+        1000000000000000000n
+      )
+    ).wait();
+
+    (await exampleContract.swapExactInputSingle(1000000000000000000n)).wait();
+
+    console.log("After signer calls swapExactInputSingle:");
+    await printBalances();
+
+    //authorize exampleContract to withdraw another DAI
+    const daiTokenWithSigner2 = daiToken.connect(signer);
+    (
+      await daiTokenWithSigner2.approve(
+        addrExampleContract,
+        1000000000000000000n
+      )
+    ).wait();
+
+    (await exampleContract.swapExactInputSingle02(1000000000000000000n)).wait();
+
+    console.log("After signer calls swapExactInputSingle02:");
+    await printBalances();
+
+    //also included an example where the contract has funds and is commanded to execute a swap
+    (
+      await exampleContract.swapContractFundsExactInputSingle02(
+        ethers.parseUnits("1", 18)
+      )
+    ).wait();
+
     console.log(
-      `DAI balance of signer: ${ethers.formatUnits(signerbalanceDAI, 18)}`
+      "After the contract is commanded to call swapContractFundsExactInputSingle02:"
     );
+    await printBalances();
 
-    const contractBalanceDAI = await daiToken.balanceOf(addrExampleContract);
-    console.log(
-      `DAI balance of ExampleContract: ${ethers.formatUnits(
-        contractBalanceDAI,
-        18
-      )}`
-    );
-
-    const richbalanceWETH = await wethToken.balanceOf(rich.address);
-    console.log(
-      `WETH balance of rich  : ${ethers.formatUnits(richbalanceWETH, 18)}`
-    );
-
-    const signerbalanceWETH = await wethToken.balanceOf(signer.address);
-    console.log(
-      `WETH balance of signer: ${ethers.formatUnits(signerbalanceWETH, 18)}`
-    );
-
-    const val = await exampleContract.swapMyExactInputSingle02(
-      ethers.parseUnits("1", 18)
-    );
-
-    val.wait();
-
-    console.log(val);
-
-    const contractBalanceWETH = await wethToken.balanceOf(addrExampleContract);
-    console.log(
-      `WETH balance of ExampleContract: ${ethers.formatUnits(
-        contractBalanceWETH,
-        18
-      )}`
-    );
-
-    // await daiToken.approve(addrExampleContract, 10000000000000000n);
-
-    // console.log(exampleContract);
-
-    // await exampleContract.swapExactInputSingle(10000000000000000n);
-
-    // // Get the balance of DAI for signer 0
-    // const balance = await daiToken.balanceOf(signer.address);
-    // console.log(`DAI balance of signer 0: ${ethers.formatUnits(balance, 18)}`);
-
-    // return {
-    //   addrExampleContract,
-    //   abi: exampleContract.interface,
-    // };
+    return {
+      signerWETHbal: await wethToken.balanceOf(signer.address),
+      contractWETHbal: await wethToken.balanceOf(addrExampleContract),
+    };
   }
 
-  it("Should have a deployment address", async function () {
-    // const { address, abi } =
-    await loadFixture(deploy);
-    // const exampleContract = new ethers.Contract(address, abi, ethers.provider);
-
-    // Now you can interact with exampleContract as usual
-    expect(1).to.equal(1);
+  it("Signer and Contract should have WETH", async function () {
+    const { signerWETHbal, contractWETHbal } = await loadFixture(deploy);
+    expect(signerWETHbal).to.be.greaterThan(0);
+    expect(contractWETHbal).to.be.greaterThan(0);
   });
 });

@@ -78,7 +78,7 @@ contract SwapExamples {
         amountOut = swapRouter02.exactInputSingle(params);
     }
 
-    function swapMyExactInputSingle02(
+    function swapContractFundsExactInputSingle02(
         uint256 amountIn
     ) external returns (uint256 amountOut) {
         TransferHelper.safeApprove(DAI, address(swapRouter02), amountIn);
