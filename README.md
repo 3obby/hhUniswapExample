@@ -18,7 +18,8 @@ yarn hardhat test --network localhost
 
 this simulates the mainnet ethereum, deploying the example contract and executing three swaps as an example; swapExactInputSingle, swapExactInputSingle02, and swapContractFundsExactInputSingle02, the last of which simulates an external account triggering the example contract to swap its funds. A successful test should result in something similar to the following:
 
-`  exampleContract
+```
+exampleContract
 ExampleContract deployed to: 0xD5bFeBDce5c91413E41cc7B24C8402c59A344f7c
 Initial Balances (after 'rich' DAI holder shares 2 DAI/ea with signer/contract):
 DAI balance of rich     : 28222569.275428721739958856
@@ -48,4 +49,5 @@ DAI balance of contract : 1.0
 WETH balance of rich    : 0.0
 WETH balance of signer  : 0.001081573729955222
 WETH balance of contract: 0.000540786832951393
-    ✔ Signer and Contract should have WETH (3055ms)`
+    ✔ Signer and Contract should have WETH (3055ms)
+```
