@@ -1,6 +1,6 @@
 # hardhat uniswap example
 
-This is a demo of swapExactInputSingle in Hardhat with a forked version of Ethereum mainnet. In this example, we simulate a swap from the default 'signer' account from DAI to WETH. This involves a bit of setup; 'signer' is sent some DAI by a holder, then 'signer' must call the 'DAI' token's 'approve' function to allow this example contract to spend the DAI in the transaction. This test should work out of the box if you follow the instructions below:
+This is a demo of swapExactInputSingle in Hardhat with a forked version of Ethereum mainnet. In this example, we simulate a swap from the default 'signer' account from DAI to WETH. Read the test file to see the setup; 'signer' is sent some DAI by a holder, then 'signer' must call the 'DAI' token's 'approve' function to allow this example contract to spend the DAI in the transaction. This test should work out of the box if you follow the instructions below:
 
 get an api key from an rpc provider like infura or alchemy
 
