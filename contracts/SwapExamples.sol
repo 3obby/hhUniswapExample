@@ -12,17 +12,18 @@ contract SwapExamples {
     address private constant SWAP_ROUTER_02 =
         0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
 
-    address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
+    address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; //mainnet
     //0xd0A1E359811322d97991E03f863a0C30C2cF029C; //kovan
-    // address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab; // rinkeby
-    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    //0xc778417E063141139Fce010982780140Aa0cD5Ab; // rinkeby
 
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F; //mainnet
     //0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa; //kovan
-    //address public constant DAI = 0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735; // rinkeby
+    //0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735; // rinkeby
 
     ISwapRouter public immutable swapRouter = ISwapRouter(SWAP_ROUTER);
     IV3SwapRouter public immutable swapRouter02 = IV3SwapRouter(SWAP_ROUTER_02);
+
+    receive() external payable {}
 
     function safeTransferWithApprove(
         uint256 amountIn,
@@ -69,6 +70,25 @@ contract SwapExamples {
                 tokenOut: WETH,
                 fee: 3000,
                 recipient: msg.sender,
+                amountIn: amountIn,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            });
+
+        amountOut = swapRouter02.exactInputSingle(params);
+    }
+
+    function swapMyExactInputSingle02(
+        uint256 amountIn
+    ) external returns (uint256 amountOut) {
+        TransferHelper.safeApprove(DAI, address(swapRouter02), amountIn);
+
+        IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter
+            .ExactInputSingleParams({
+                tokenIn: DAI,
+                tokenOut: WETH,
+                fee: 3000,
+                recipient: address(this),
                 amountIn: amountIn,
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0

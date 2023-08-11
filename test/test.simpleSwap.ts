@@ -10,6 +10,7 @@ describe("exampleContract", function () {
   async function deploy() {
     const swapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
     const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+    const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
     const ERC20_ABI = [
       "function name() public view returns (string)",
       "function symbol() public view returns (string)",
@@ -43,22 +44,57 @@ describe("exampleContract", function () {
     });
 
     const daiToken = new ethers.Contract(DAI_ADDRESS, ERC20_ABI, rich);
+    const wethToken = new ethers.Contract(WETH_ADDRESS, ERC20_ABI, rich);
 
-    const transferAmount = ethers.parseUnits("1", 18);
+    const transferAmount = ethers.parseUnits("2", 18);
 
-    await daiToken.transfer(signer.address, transferAmount);
+    await daiToken.transfer(addrExampleContract, transferAmount);
 
-    const richbalance = await daiToken.balanceOf(rich.address);
+    const richbalanceDAI = await daiToken.balanceOf(rich.address);
     console.log(
-      `DAI balance of rich  : ${ethers.formatUnits(richbalance, 18)}`
+      `DAI balance of rich  : ${ethers.formatUnits(richbalanceDAI, 18)}`
     );
 
-    const signerbalance = await daiToken.balanceOf(signer.address);
+    const signerbalanceDAI = await daiToken.balanceOf(signer.address);
     console.log(
-      `DAI balance of signer: ${ethers.formatUnits(signerbalance, 18)}`
+      `DAI balance of signer: ${ethers.formatUnits(signerbalanceDAI, 18)}`
     );
 
-    await daiToken.approve(addrExampleContract, 10000000000000000n);
+    const contractBalanceDAI = await daiToken.balanceOf(addrExampleContract);
+    console.log(
+      `DAI balance of ExampleContract: ${ethers.formatUnits(
+        contractBalanceDAI,
+        18
+      )}`
+    );
+
+    const richbalanceWETH = await wethToken.balanceOf(rich.address);
+    console.log(
+      `WETH balance of rich  : ${ethers.formatUnits(richbalanceWETH, 18)}`
+    );
+
+    const signerbalanceWETH = await wethToken.balanceOf(signer.address);
+    console.log(
+      `WETH balance of signer: ${ethers.formatUnits(signerbalanceWETH, 18)}`
+    );
+
+    const val = await exampleContract.swapMyExactInputSingle02(
+      ethers.parseUnits("1", 18)
+    );
+
+    val.wait();
+
+    console.log(val);
+
+    const contractBalanceWETH = await wethToken.balanceOf(addrExampleContract);
+    console.log(
+      `WETH balance of ExampleContract: ${ethers.formatUnits(
+        contractBalanceWETH,
+        18
+      )}`
+    );
+
+    // await daiToken.approve(addrExampleContract, 10000000000000000n);
 
     // console.log(exampleContract);
 
